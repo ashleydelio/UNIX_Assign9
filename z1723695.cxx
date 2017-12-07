@@ -1,15 +1,16 @@
-/*
- * TCPServerReadDir.cxx
+/* *********************************************
+ * Programmer Name: Ashley De Lio
  * 
- * TCP server
+ * Z-ID: Z1723695
  * 
- * 	loops/waits/forks/execs for path received from client 
- * 	      opens direectory, sends back lines of file names to client
+ * Class: CSCI 330 - 2
  * 
- * 	command line arguments:
- * 		argv[1] port number to receive requests on
+ * Program:  Assignment 9
  * 
- */
+ * Purpose: Exercise TCP server socket system 
+ * 			calls. Program implements a simple 
+ * 			file server.
+ * ********************************************/
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -78,35 +79,35 @@ void processClientRequest(int connSock) {
         cout << "It's a directory" << endl;
         
         // open directory
-	DIR *dirp = opendir(pathname.c_str());
-	if (dirp == 0) {
+		DIR *dirp = opendir(pathname.c_str());
+		if (dirp == 0) {
 		// tell client that an error occurred
 		// duplicate socket descriptor into error output
-		close(2);
-		dup(connSock);
-		perror(pathname.c_str());
-		exit(EXIT_SUCCESS);
-	}
+			close(2);
+			dup(connSock);
+			perror(pathname.c_str());
+			exit(EXIT_SUCCESS);
+		}
 	
 	// read directory entries
-	struct dirent *dirEntry;
-	while ((dirEntry = readdir(dirp)) != NULL) {
-		strcpy(buffer, dirEntry->d_name);
-		strcat(buffer, "\n");
+		struct dirent *dirEntry;
+		while ((dirEntry = readdir(dirp)) != NULL) {
+			strcpy(buffer, dirEntry->d_name);
+			strcat(buffer, "\n");
 		
-		//write back to client
-		if (write(connSock, buffer, strlen(buffer)) < 0) {
-			perror("write");
-			exit(EXIT_FAILURE);
-		}
-		cout << "sent: " << buffer;		
-	}	
-	closedir(dirp);
-	cout << "done with client request\n";
-	close(connSock);
-	exit(EXIT_SUCCESS);
+			//write back to client
+			if (write(connSock, buffer, strlen(buffer)) < 0) {
+				perror("write");
+				exit(EXIT_FAILURE);
+			}
+			cout << "sent: " << buffer;		
+		}	
+		closedir(dirp);
+		cout << "done with client request\n";
+		close(connSock);
+		exit(EXIT_SUCCESS);
         
-		}
+			}
 		else if( s.st_mode & S_IFREG ){
         //it's a file
         
@@ -148,9 +149,22 @@ void processClientRequest(int connSock) {
 		exit(EXIT_SUCCESS);
         
 	}
-
-	
+		
 }
+	else{
+		char error[1024];
+		strcpy(error, "Error: ");
+		strcat(error, pathname.c_str());
+		strcat(error, " not found\n");
+		
+		if (write(connSock, error, strlen(error)) < 0) {
+			perror("write");
+			exit(EXIT_FAILURE);
+		}
+		
+		close(connSock);
+		exit(EXIT_SUCCESS);
+	}
 }
 
 //Else if requested command is "INFO"
