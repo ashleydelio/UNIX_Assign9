@@ -21,6 +21,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+
+
 using namespace std;
 
 void processClientRequest(int connSock) {
@@ -107,46 +109,39 @@ void processClientRequest(int connSock) {
         //it's a file
         
         cout << "It's a file" << endl;
-        
-        char *source = NULL;
-        FILE *fp = fopen(pathname.c_str(), "r");
-        if(fp != NULL){
-			//go to the end of the file
-			if(fseek(fp, 0L, SEEK_END) == 0) {
-				//Get size of file
-				long bufsize = ftell(fp);
-				if (bufsize == -1){
-					perror("bufsize");
-					exit(EXIT_FAILURE);
-				}
-				
-				//allocate buffer to size of file
-				source = (char *) malloc(sizeof(char) * (bufsize + 1));
-				
-				//go back to start of file
-				if(fseek(fp, 0L, SEEK_SET) != 0){
-					perror("Can't find beginning of file");
-					exit(EXIT_FAILURE);
-				}
-				
-				size_t newLen = fread(source, sizeof(char), bufsize, fp);
-				if(newLen == 0){
-					fputs("Error reading file", stderr);
-				}
-				
-				else{
-					source[newLen++] = '\0';
-				}
-			}
-			fclose(fp);
-		}
-        free(source);
-        
+      
+		FILE * pFile;
+		size_t lSize;
+		char * source;
+		size_t result;
+
+		pFile = fopen ( pathname.c_str() , "rb" );
+		if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
+
+		// obtain file size:
+		fseek (pFile , 0 , SEEK_END);
+		lSize = ftell (pFile);
+		rewind (pFile);
+
+		// allocate memory to contain the whole file:
+		source = (char*) malloc (sizeof(char)*lSize);
+		if (source == NULL) {fputs ("Memory error",stderr); exit (2);}
+
+		// copy the file into the buffer:
+		result = fread (source,1,lSize,pFile);
+		if (result != lSize) {fputs ("Reading error",stderr); exit (3);}
+
+  /* the whole file is now loaded in the memory buffer. */
+
+		// terminate
+		fclose (pFile);
+		        
         if (write(connSock, source, strlen(source)) < 0) {
 			perror("write");
 			exit(EXIT_FAILURE);
-        }
+		}
         
+        free(source);
         close(connSock);
 		exit(EXIT_SUCCESS);
         
