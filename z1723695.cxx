@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <ctime>
 
 
 using namespace std;
@@ -66,8 +67,9 @@ void processClientRequest(int connSock) {
 		
 		token = strtok(NULL, delim);
 	}
-	
-	
+
+//If requested command is GET	
+	if(reqCommand == "GET"){
 	struct stat s;
 	if( stat(pathname.c_str(),&s) == 0 ){
 		if( s.st_mode & S_IFDIR ){
@@ -149,6 +151,28 @@ void processClientRequest(int connSock) {
 
 	
 }
+}
+
+//Else if requested command is "INFO"
+
+	else if(reqCommand == "INFO"){
+	
+	//current date/time
+	time_t now = time(0);
+	
+	//convert now to string
+	char* dt = ctime(&now);
+	if (write(connSock, dt, strlen(dt)) < 0) {
+			perror("write");
+			exit(EXIT_FAILURE);
+		}
+        
+        close(connSock);
+		exit(EXIT_SUCCESS);
+	
+	
+	}
+	
 	
 }
         
