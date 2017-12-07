@@ -62,9 +62,13 @@ int main(int argc, char *argv[]) {
 	cout << "echoServer listening on port: " << argv[1] << endl;
 
 	// Run until cancelled 
+	
+	int connSock[11];
+	int i = 0;
+	int rs;
 	while (true) {
-		int connSock=accept(sock, (struct sockaddr *) &client_address, &addrlen);
-		if (connSock < 0) {
+		connSock[i]=accept(sock, (struct sockaddr *) &client_address, &addrlen);
+		if (connSock[i] < 0) {
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
@@ -81,7 +85,7 @@ int main(int argc, char *argv[]) {
 			
 			// read a message from the client
 			char buffer[1024];
-			int received = read(connSock, buffer, sizeof(buffer));
+			int received = read(connSock[i], buffer, sizeof(buffer));
 			if (received < 0) {
 			perror("read");
 			exit(EXIT_FAILURE);
@@ -89,23 +93,88 @@ int main(int argc, char *argv[]) {
 			//GET
 		
 		
+		cout << "Buffer: " << buffer << endl;
+//Begin process to divide request command and pathname string into reqCommand and path strings
+
+//Define deliminator and new array for reqCommand and path to be placed into	
+	const char delim[2] = " ";
+	char * section[3];
+	int j = 0;
+	
+	char *token;
+	string reqCommand, path;
+	
+	token = strtok(buffer, delim);
+
+//Place	pieces of argv[2] (separated by whitespace) into section array and corresponding reqCommand and path strings
+	while (token != NULL){
+		section[j] = (char *) malloc  (strlen(token) + 1);
+		strcpy(section[j], token);
 		
+		
+		if (j == 0){
+			reqCommand = section[j];
+		}
+		
+		else if (j == 1){
+			path = section[j];
+		}
+		
+		j++;
+		
+		token = strtok(NULL, delim);
+	}
+cout << "reqCommand is: " << reqCommand << endl;
+cout << "path is: " << path << endl;
+//if request command is GET, get and write back appropriate file or directory		
+		if (reqCommand == "GET"){
+			rs = execlp("/bin/ls", "/bin/ls", path.c_str(), (char*) NULL);
+			if (rs == -1) { 
+				perror(reqCommand.c_str()); exit(EXIT_FAILURE); 
+			}
+			
+			
+			
 			// write the message back to client 
-			if (write(connSock, buffer, received) < 0) {
+			if (write(connSock[i], buffer, received) < 0) {
 				perror("write");
 				exit(EXIT_FAILURE);
 			}
-			close(connSock);
+			close(connSock[i]);
+		
+		}
+	
+//if request command is INFO, get and write back the current date and time in text format	
+		else if (reqCommand == "INFO"){
+		
+	
+				
+		
+		
+		
+			// write the message back to client 
+			if (write(connSock[i], buffer, received) < 0) {
+				perror("write");
+				exit(EXIT_FAILURE);
+			}
+			
+			
+			
+			close(connSock[i]);
 	}
 	
+	}
 	else { 
       // Parent process: continue to top of loop
-      
+      i++;
+      if(i > 10){
+		i = 0;
+	  }
       continue;
 		
 	}
-	}
 	
+}	
 	close(sock);
 	return 0;
 }
