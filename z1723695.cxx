@@ -9,7 +9,8 @@
  * 
  * Purpose: Exercise TCP server socket system 
  * 			calls. Program implements a simple 
- * 			file server.
+ * 			file server. Can handle request
+ * 			commands GET and INFO (Extra credit).
  * ********************************************/
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -90,24 +91,33 @@ void processClientRequest(int connSock) {
 		}
 	
 	// read directory entries
+		
 		struct dirent *dirEntry;
 		while ((dirEntry = readdir(dirp)) != NULL) {
-			strcpy(buffer, dirEntry->d_name);
+			
+			if (dirEntry->d_name[0] != '.') {
+        	strcpy(buffer, dirEntry->d_name);
 			strcat(buffer, "\n");
+			}
 		
+			else{
+				continue;
+			}
+			
 			//write back to client
 			if (write(connSock, buffer, strlen(buffer)) < 0) {
 				perror("write");
 				exit(EXIT_FAILURE);
 			}
 			cout << "sent: " << buffer;		
-		}	
+			}	
+		
 		closedir(dirp);
 		cout << "done with client request\n";
 		close(connSock);
 		exit(EXIT_SUCCESS);
         
-			}
+		}
 		else if( s.st_mode & S_IFREG ){
         //it's a file
         
@@ -149,7 +159,6 @@ void processClientRequest(int connSock) {
 		exit(EXIT_SUCCESS);
         
 	}
-		
 }
 	else{
 		char error[1024];
@@ -187,8 +196,8 @@ void processClientRequest(int connSock) {
 	
 	}
 	
-	
-}
+}	
+
         
 int main(int argc, char *argv[]) {
 
